@@ -20,7 +20,6 @@
       --ink:#0e1726;
       --muted:#6b7280;
       --brand:#1e97b3;
-      --brand-2:#147d95;
       --line:#e5e7eb;
       --chip:#eef7fb;
       --radius:16px;
@@ -34,18 +33,15 @@
       background:var(--bg);
     }
 
-    /* Header */
     .header{ position:sticky; top:0; z-index:10; background:var(--card); border-bottom:1px solid var(--line); }
     .header-inner{ max-width:1200px; margin:0 auto; padding:12px 20px; display:flex; gap:12px; align-items:center; }
     .logo{ width:32px; height:32px; border-radius:8px; object-fit:contain; background:#fff; border:1px solid var(--line); }
     .title{ font-weight:700; font-size:18px; letter-spacing:.2px; }
 
-    /* Layout */
     .container{max-width:1200px; margin:18px auto; padding:0 20px;}
     .grid{ display:grid; grid-template-columns:300px 1fr; gap:16px; }
     @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
 
-    /* Panel Filter */
     .panel{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
     .panel h3{ margin:0 0 12px 0; font-size:14px; font-weight:700; }
     .filters{ display:flex; flex-direction:column; gap:10px; }
@@ -57,7 +53,6 @@
     .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
     .chip{ font-size:12px; padding:6px 10px; border-radius:999px; background:var(--chip); border:1px solid #d7ecf4; }
 
-    /* Kartu Tabel */
     .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:0; overflow:hidden; box-shadow:0 1px 2px rgba(0,0,0,.04); }
     .card-header{ padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); gap:10px; flex-wrap:wrap; }
     .result-count{ font-size:13px; color:var(--muted) }
@@ -66,7 +61,6 @@
     .search input{ width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-size:13px; }
     .export-btn{ border:1px solid var(--line); background:#fff; border-radius:10px; padding:8px 12px; font-size:13px; cursor:pointer; }
 
-    /* Subsearch */
     .subsearch{ padding:10px 14px; border-bottom:1px solid var(--line); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .subsearch .label{ font-size:12px; color:var(--muted); font-weight:600; }
     .subsearch .input-wrap{ flex:1; min-width:260px; }
@@ -80,7 +74,6 @@
     a.link{ color:var(--brand); text-decoration:none }
     a.link:hover{ text-decoration:underline }
 
-    /* Badges */
     .badge{ display:inline-block; padding:4px 8px; border-radius:999px; font-weight:600; font-size:11px; border:1px solid transparent; white-space:nowrap; }
     .bd-sd{ background:#fff6e6; border-color:#ffe2ad; }
     .bd-smp{ background:#fff0e6; border-color:#ffdab8; }
@@ -92,7 +85,6 @@
     .bd-lain{ background:#f3f4f6; border-color:#e5e7eb; }
     .bd-prov{ background:#eef7fb; border:1px solid #d7ecf4; }
 
-    /* Pagination */
     .pagination{ display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-top:1px solid var(--line); gap:10px; flex-wrap:wrap; }
     .pager{ display:flex; gap:8px; align-items:center; }
     .pg-btn{ background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px 12px; cursor:pointer; font-size:13px; }
@@ -102,7 +94,6 @@
   </style>
 </head>
 <body>
-  <!-- Header -->
   <header class="header">
     <div class="header-inner">
       <img class="logo" alt="Lookerin Icon" src="https://res.cloudinary.com/dkihurh8o/image/upload/v1759062197/Logo_-_Lookerin-_Icon_he3evd.png">
@@ -120,10 +111,7 @@
             <label for="f-gender">JENIS KELAMIN</label>
             <select id="f-gender"><option value="">Semua</option></select>
           </div>
-          <div class="field">
-            <label for="f-minatposisi">MINAT POSISI</label>
-            <select id="f-minatposisi"><option value="">Semua</option></select>
-          </div>
+          <!-- MINAT POSISI dihapus -->
           <div class="field">
             <label for="f-kerjapertama">POSISI DILAMAR</label>
             <select id="f-kerjapertama"><option value="">Semua</option></select>
@@ -190,10 +178,10 @@
   <script>
     // ========= KONFIGURASI =========
     const SHEET_ID = "1ESGkZf2P_0XMnyJgb7wN_L_Xo144nO6GPg30rrBZW58";
-    const SHEET_NAME = "lookerin"; // sesuai permintaan
+    const SHEET_NAME = "lookerin";
     const ROWS_PER_PAGE = 50;
 
-    // Urutan kolom (kolom MINAT POSISI KEDUA & KETIGA DIHILANGKAN dari tampilan)
+    // Kolom MINAT POSISI KEDUA & KETIGA disembunyikan (tidak ditampilkan)
     const COLUMNS_ORDER = [
       "TIMESTAMP","EMAIL AKTIF","SUMBER INFORMASI LOWONGAN","NAMA LENGKAP","TANGGAL LAHIR",
       "NOMOR WA AKTIF","NOMOR HP AKTIF","JENIS KELAMIN","PENGALAMAN KERJA TERAKHIR","DURASI PENGALAMAN KERJA",
@@ -213,7 +201,6 @@
 
     // Filter elements
     const fGender = document.getElementById('f-gender');
-    const fMinatPosisi = document.getElementById('f-minatposisi');
     const fKerjaPertama = document.getElementById('f-kerjapertama');
     const fPendidikan = document.getElementById('f-pendidikan');
     const fProvDom = document.getElementById('f-provdom');
@@ -233,9 +220,9 @@
     const btnXlsx = document.getElementById('btnXlsx');
 
     // Data state
-    let rowsRaw = [];           // semua baris mentah (array of objects)
-    let rowsFiltered = [];      // setelah filter + pencarian
-    let currentPage = 1;        // halaman aktif
+    let rowsRaw = [];
+    let rowsFiltered = [];
+    let currentPage = 1;
 
     const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
@@ -254,7 +241,6 @@
           cols.forEach((label, i) => {
             const cell = r.c[i];
             let v = (cell && (cell.f ?? cell.v)) ?? "";
-            // Simpan original v (bisa Date(...) / angka serial / string)
             obj[label] = v;
           });
           return obj;
@@ -262,10 +248,7 @@
 
         renderHeader();
         populateFilters();
-
-        // Isi datalist suggestion dari MINAT POSISI KERJA PERTAMA
         populateJobSuggestions();
-
         applyFilters();
       }catch(err){
         console.error(err);
@@ -284,31 +267,22 @@
       thead.appendChild(tr);
     }
 
+    function vToStr(v){ return (v==null? "": String(v)).trim(); }
     function uniqueSorted(values){
       return [...new Set(values.filter(v => v !== "" && v != null))].sort((a,b)=>{
         const A = (""+vToStr(a)).toLowerCase(), B = (""+vToStr(b)).toLowerCase();
         if (A < B) return -1; if (A > B) return 1; return 0;
       });
     }
-
-    function vToStr(v){ return (v==null? "": String(v)).trim(); }
-
     function populateSelect(selectEl, items){
       const current = selectEl.value || "";
       selectEl.innerHTML = '<option value="">Semua</option>' + items.map(v => `<option value="${escapeHtml(vToStr(v))}">${escapeHtml(vToStr(v))}</option>`).join("");
       if (items.includes(current)) selectEl.value = current;
     }
-
     function getCol(name){ return rowsRaw.map(r => r[name] ?? ""); }
 
     function populateFilters(){
       populateSelect(fGender, uniqueSorted(getCol("JENIS KELAMIN")));
-      const minatAny = [
-        ...getCol("MINAT POSISI KERJA PERTAMA"),
-        ...getCol("MINAT POSISI KERJA KEDUA"),
-        ...getCol("MINAT POSISI KERJA KETIGA")
-      ];
-      populateSelect(fMinatPosisi, uniqueSorted(minatAny));
       populateSelect(fKerjaPertama, uniqueSorted(getCol("MINAT POSISI KERJA PERTAMA")));
       populateSelect(fPendidikan, uniqueSorted(getCol("PENDIDIKAN TERAKHIR")));
       populateSelect(fProvDom, uniqueSorted(getCol("PROVINSI DOMISILI")));
@@ -328,7 +302,6 @@
         .replaceAll("'","&#039;");
     }
 
-    // Link deteksi URL
     function linkifyIfUrl(value){
       const v = String(value || "").trim();
       if (!v) return "";
@@ -338,7 +311,6 @@
       return escapeHtml(v);
     }
 
-    // Badge Pendidikan
     function pendidikanClass(valRaw){
       const v = (valRaw || "").toString().toLowerCase();
       if (/\bsd\b/.test(v)) return "bd-sd";
@@ -351,91 +323,72 @@
       return "bd-lain";
     }
 
-    // ================== Formatters ==================
-    // Parse berbagai kemungkinan format tanggal dari gviz
+    // ==== Tanggal: tampil "01 Sept 2025" ====
     function parseGvizDate(v){
       if (v == null) return null;
       if (typeof v === "string"){
         const s = v.trim();
-        // Bentuk gviz: Date(YYYY,MM,DD[,hh,mm,ss])
         const m = s.match(/^Date\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+),\s*(\d+),\s*(\d+))?\)$/);
         if (m){
           const y = +m[1], mo = +m[2], d = +m[3];
           const hh = +(m[4] ?? 0), mm = +(m[5] ?? 0), ss = +(m[6] ?? 0);
           return new Date(Date.UTC(y, mo, d, hh, mm, ss));
         }
-        // ISO / locale-parse
         const dIso = new Date(s);
         if (!isNaN(dIso)) return dIso;
-        // Angka serial di string
         const num = Number(s);
         if (!isNaN(num)) return sheetsSerialToDate(num);
         return null;
       }
-      if (typeof v === "number"){ // serial
-        return sheetsSerialToDate(v);
-      }
-      if (typeof v === "object" && v !== null && v.v){ // kadang objek {v:"Date(...)"}
-        return parseGvizDate(v.v);
-      }
+      if (typeof v === "number"){ return sheetsSerialToDate(v); }
+      if (typeof v === "object" && v !== null && v.v){ return parseGvizDate(v.v); }
       return null;
     }
-
     function sheetsSerialToDate(n){
-      // Google Sheets serial day: epoch 1899-12-30
-      // n mungkin berisi jam (pecahan)
-      const ms = (n - 25569) * 86400 * 1000; // 25569 = Excel epoch ke Unix (1970-01-01), tapi untuk kesamaan kita pakai pendekatan umum
+      const ms = (n - 25569) * 86400 * 1000;
       const d = new Date(ms);
       return isNaN(d) ? null : d;
     }
-
-    function formatDateID(v){
+    function formatDateShortID(v){
       const d = parseGvizDate(v);
       if (!d) return escapeHtml(vToStr(v));
-      // format "01 Januari 2025"
-      return new Intl.DateTimeFormat('id-ID', { day:'2-digit', month:'long', year:'numeric' }).format(d);
+      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sept','Okt','Nov','Des'];
+      const day = String(d.getDate()).padStart(2,'0');
+      const mon = months[d.getMonth()];
+      const year = d.getFullYear();
+      return `${day} ${mon} ${year}`;
     }
 
-    // Format rupiah tanpa simbol, hanya pemisah ribuan
     function formatIDNumber(value){
       if (value == null || value === "") return "";
-      // buang selain angka & minus & titik/koma
       const s = String(value).toString().replace(/[^\d\-.,]/g,'').replace(',', '.');
       const num = Number(s);
       if (isNaN(num)) return escapeHtml(String(value));
       return num.toLocaleString('id-ID');
     }
 
-    // ================== Filtering & Rendering ==================
     function applyFilters(){
       const sGender = vToStr(fGender.value).toLowerCase();
-      const sMinat = vToStr(fMinatPosisi.value).toLowerCase();
       const sKerja1 = vToStr(fKerjaPertama.value).toLowerCase();
       const sPend = vToStr(fPendidikan.value).toLowerCase();
       const sProv = vToStr(fProvDom.value).toLowerCase();
       const q  = vToStr(searchInput.value).toLowerCase();
       const q2 = vToStr(searchInput2.value).toLowerCase();
 
-      renderChips([
-        ["JENIS KELAMIN", sGender],
-        ["MINAT POSISI", sMinat],
-        ["POSISI DILAMAR", sKerja1],
-        ["PENDIDIKAN TERAKHIR", sPend],
-        ["PROVINSI DOMISILI", sProv],
-        ["Cari (atas)", q],
-        ["Cari (suggest)", q2]
-      ]);
+      chips.innerHTML = "";
+      [["JENIS KELAMIN",sGender],["POSISI DILAMAR",sKerja1],["PENDIDIKAN TERAKHIR",sPend],["PROVINSI DOMISILI",sProv],["Cari (atas)",q],["Cari (suggest)",q2]]
+      .forEach(([label,val])=>{
+        if(!val) return;
+        const span=document.createElement('span'); span.className="chip"; span.textContent=`${label}: ${val}`; chips.appendChild(span);
+      });
 
       rowsFiltered = rowsRaw.filter(r => {
         const gender = vToStr(r["JENIS KELAMIN"]).toLowerCase();
         const minat1 = vToStr(r["MINAT POSISI KERJA PERTAMA"]).toLowerCase();
-        const minat2 = vToStr(r["MINAT POSISI KERJA KEDUA"]).toLowerCase();
-        const minat3 = vToStr(r["MINAT POSISI KERJA KETIGA"]).toLowerCase();
         const pendidikan = vToStr(r["PENDIDIKAN TERAKHIR"]).toLowerCase();
         const provdom = vToStr(r["PROVINSI DOMISILI"]).toLowerCase();
 
         if (sGender && gender !== sGender) return false;
-        if (sMinat && !(minat1 === sMinat || minat2 === sMinat || minat3 === sMinat)) return false;
         if (sKerja1 && minat1 !== sKerja1) return false;
         if (sPend && pendidikan !== sPend) return false;
         if (sProv && provdom !== sProv) return false;
@@ -458,18 +411,6 @@
       renderTablePage();
     }
 
-    function renderChips(pairs){
-      const chips = document.getElementById('activeChips');
-      chips.innerHTML = "";
-      pairs.forEach(([label, val])=>{
-        if (!val) return;
-        const span = document.createElement('span');
-        span.className = "chip";
-        span.textContent = `${label}: ${val}`;
-        chips.appendChild(span);
-      });
-    }
-
     function renderTablePage(){
       const total = rowsFiltered.length;
       const totalPages = Math.max(1, Math.ceil(total / ROWS_PER_PAGE));
@@ -484,8 +425,6 @@
         return `<tr>
           ${COLUMNS_ORDER.map(col => {
             const raw = r[col];
-
-            // TREATMENT KHUSUS
             if (col === "UPLOAD CV") return `<td>${linkifyIfUrl(raw)}</td>`;
             if (col === "PENDIDIKAN TERAKHIR"){
               const cls = pendidikanClass(raw);
@@ -498,9 +437,8 @@
               return `<td>${formatIDNumber(raw)}</td>`;
             }
             if (col === "TIMESTAMP"){
-              return `<td>${formatDateID(raw)}</td>`;
+              return `<td>${formatDateShortID(raw)}</td>`;
             }
-
             return `<td>${escapeHtml(vToStr(raw))}</td>`;
           }).join("")}
         </tr>`;
@@ -515,16 +453,19 @@
       btnNext.disabled = currentPage >= totalPages;
     }
 
-    // ===== Export Helpers =====
     function filteredDataAsArray(){
-      // Data yang diekspor = rowsFiltered (kalau kosong pakai rowsRaw)
       const data = rowsFiltered.length ? rowsFiltered : rowsRaw;
       const arr = data.map(r => COLUMNS_ORDER.map(k => {
         let v = r[k];
-        // Untuk konsistensi ekspor, tetap ekspor nilai mentah (kecuali timestamp kita ubah jadi yyyy-mm-dd agar rapi)
         if (k === "TIMESTAMP"){
           const d = parseGvizDate(v);
-          if (d) return d.toISOString().slice(0,10);
+          if (d){
+            const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sept','Okt','Nov','Des'];
+            const day = String(d.getDate()).padStart(2,'0');
+            const mon = months[d.getMonth()];
+            const year = d.getFullYear();
+            return `${day} ${mon} ${year}`;
+          }
           return vToStr(v);
         }
         return v ?? "";
@@ -569,10 +510,9 @@
     document.getElementById('pg-prev').addEventListener('click', ()=>{ currentPage--; renderTablePage(); });
     document.getElementById('pg-next').addEventListener('click', ()=>{ currentPage++; renderTablePage(); });
 
-    document.getElementById('applyFilter').addEventListener('click', applyFilters);
-    document.getElementById('clearFilter').addEventListener('click', ()=>{
+    btnApply.addEventListener('click', applyFilters);
+    btnClear.addEventListener('click', ()=>{
       fGender.value = "";
-      fMinatPosisi.value = "";
       fKerjaPertama.value = "";
       fPendidikan.value = "";
       fProvDom.value = "";
@@ -585,11 +525,9 @@
     btnSearch2.addEventListener('click', applyFilters);
     btnClear2.addEventListener('click', ()=>{ searchInput2.value=""; applyFilters(); });
 
-    // Export buttons
     btnCsv.addEventListener('click', exportCSV);
     btnXlsx.addEventListener('click', exportXLSX);
 
-    // Start
     loadData();
   </script>
 </body>

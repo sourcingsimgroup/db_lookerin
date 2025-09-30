@@ -23,6 +23,7 @@
       --line:#e5e7eb;
       --chip:#eef7fb;
       --radius:16px;
+      --danger:#ef4444;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -33,10 +34,16 @@
       background:var(--bg);
     }
 
+    .hidden{display:none !important;}
+
     .header{ position:sticky; top:0; z-index:10; background:var(--card); border-bottom:1px solid var(--line); }
-    .header-inner{ max-width:1200px; margin:0 auto; padding:12px 20px; display:flex; gap:12px; align-items:center; }
+    .header-inner{ max-width:1200px; margin:0 auto; padding:12px 20px; display:flex; gap:12px; align-items:center; justify-content:space-between;}
+    .left-head{display:flex; gap:12px; align-items:center;}
     .logo{ width:32px; height:32px; border-radius:8px; object-fit:contain; background:#fff; border:1px solid var(--line); }
     .title{ font-weight:700; font-size:18px; letter-spacing:.2px; }
+    .session{display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted)}
+    .logout-btn{ border:1px solid var(--line); background:#fff; color:var(--ink); padding:8px 12px; border-radius:999px; font-weight:600; font-size:12px; cursor:pointer; }
+    .logout-btn:hover{ background:#f3f4f6 }
 
     .container{max-width:1200px; margin:18px auto; padding:0 20px;}
     .grid{ display:grid; grid-template-columns:300px 1fr; gap:16px; }
@@ -91,17 +98,47 @@
     .pg-btn[disabled]{ opacity:.5; cursor:not-allowed }
     .page-info{ font-size:13px; color:var(--muted) }
     .page-size{ font-size:12px; color:var(--muted) }
+
+    /* ===== Login Modal ===== */
+    .login-wrap{
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+      background:rgba(14,23,38,.08); backdrop-filter:saturate(120%) blur(3px); padding:20px; z-index:50;
+    }
+    .login-card{
+      width:100%; max-width:380px; background:#fff; border:1px solid var(--line); border-radius:20px; padding:20px;
+      box-shadow:0 10px 20px rgba(0,0,0,.06);
+    }
+    .login-title{ font-weight:800; font-size:18px; margin:0 0 8px 0;}
+    .login-sub{ color:var(--muted); font-size:13px; margin-bottom:14px;}
+    .login-field{ margin-bottom:10px;}
+    .login-field label{ display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px;}
+    .login-field input{
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-size:13px; outline:none; background:#fff;
+    }
+    .login-actions{ display:flex; gap:8px; align-items:center; margin-top:8px;}
+    .login-error{ color:var(--danger); font-size:12px; margin-top:8px; display:none;}
+    .caps{ font-size:11px; color:var(--muted); margin-top:6px; }
+    .demo-users{ margin-top:12px; font-size:12px; background: #f8fafc; border:1px dashed var(--line); border-radius:12px; padding:10px;}
+    .demo-users code{ background:#eef2f7; border:1px solid var(--line); padding:2px 6px; border-radius:6px; }
   </style>
 </head>
 <body>
+  <!-- Header -->
   <header class="header">
     <div class="header-inner">
-      <img class="logo" alt="Lookerin Icon" src="https://res.cloudinary.com/dkihurh8o/image/upload/v1759062197/Logo_-_Lookerin-_Icon_he3evd.png">
-      <div class="title">Database Pelamar Lookerin</div>
+      <div class="left-head">
+        <img class="logo" alt="Lookerin Icon" src="https://res.cloudinary.com/dkihurh8o/image/upload/v1759062197/Logo_-_Lookerin-_Icon_he3evd.png">
+        <div class="title">Database Pelamar Lookerin</div>
+      </div>
+      <div class="session hidden" id="sessionBox">
+        <span id="sessionUser">@user</span>
+        <button class="logout-btn" id="btnLogout" title="Keluar dari sesi">Log out</button>
+      </div>
     </div>
   </header>
 
-  <main class="container">
+  <!-- Main App (tersembunyi sampai login) -->
+  <main class="container hidden" id="appRoot" aria-live="polite">
     <div class="grid">
       <!-- Filter Panel -->
       <aside class="panel" aria-label="Filter">
@@ -175,8 +212,148 @@
     </div>
   </main>
 
+  <!-- Login Modal -->
+  <div class="login-wrap" id="loginWrap" aria-modal="true" role="dialog" aria-labelledby="loginTitle">
+    <div class="login-card">
+      <h1 class="login-title" id="loginTitle">Masuk ke Lookerin</h1>
+      <p class="login-sub">Gunakan akun yang telah diberikan.</p>
+      <form id="loginForm" autocomplete="on">
+        <div class="login-field">
+          <label for="username">Username</label>
+          <input id="username" name="username" required placeholder="contoh: anya">
+        </div>
+        <div class="login-field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required placeholder="••••••••">
+        </div>
+        <div class="login-actions">
+          <button type="submit" class="btn">Login</button>
+          <button type="button" class="btn secondary" id="btnClearLogin">Clear</button>
+        </div>
+        <div class="login-error" id="loginError">Username / password salah.</div>
+        <div class="caps" id="capsWarn" style="display:none;">Caps Lock aktif.</div>
+      </form>
+
+      <div class="demo-users">
+        <div><strong>Daftar akun</strong> (case-insensitive):</div>
+        <ul style="margin:6px 0 0 16px; padding:0;">
+          <li>u: <code>sourcingho</code> • p: <code>sourcingho</code></li>
+          <li>u: <code>anya</code> • p: <code>regional1</code></li>
+          <li>u: <code>rizkia</code> • p: <code>regional2</code></li>
+          <li>u: <code>yoghi</code> • p: <code>regional3</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // ========= KONFIGURASI =========
+    // ========= AUTH =========
+    const USERS = {
+      "sourcingho": "sourcingho",
+      "anya": "regional1",
+      "rizkia": "regional2",
+      "yoghi": "regional3"
+    };
+    const SESSION_KEY = "lookerin_session_v1";
+
+    const loginWrap = document.getElementById('loginWrap');
+    const appRoot   = document.getElementById('appRoot');
+    const sessionBox = document.getElementById('sessionBox');
+    const sessionUser = document.getElementById('sessionUser');
+    const btnLogout = document.getElementById('btnLogout');
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+    const capsWarn = document.getElementById('capsWarn');
+    const btnClearLogin = document.getElementById('btnClearLogin');
+
+    function getSession(){
+      try{
+        const raw = localStorage.getItem(SESSION_KEY);
+        if(!raw) return null;
+        const obj = JSON.parse(raw);
+        if(obj && obj.user){ return obj; }
+      }catch{}
+      return null;
+    }
+    function setSession(user){
+      const payload = { user, ts: Date.now() };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+    }
+    function clearSession(){
+      localStorage.removeItem(SESSION_KEY);
+    }
+
+    function showAppFor(user){
+      // Header session
+      sessionUser.textContent = '@' + user;
+      sessionBox.classList.remove('hidden');
+
+      // Tampilkan app, sembunyikan login
+      loginWrap.classList.add('hidden');
+      appRoot.classList.remove('hidden');
+
+      // Muat data hanya sekali saat tampil
+      if (!window.__dataLoaded){
+        window.__dataLoaded = true;
+        loadData();
+      }
+    }
+
+    function showLogin(){
+      appRoot.classList.add('hidden');
+      sessionBox.classList.add('hidden');
+      loginWrap.classList.remove('hidden');
+      loginError.style.display = 'none';
+      setTimeout(()=>document.getElementById('username').focus(), 50);
+    }
+
+    // Inisialisasi
+    (function initAuth(){
+      const ses = getSession();
+      if(ses && ses.user){
+        showAppFor(ses.user);
+      }else{
+        showLogin();
+      }
+    })();
+
+    // Form events
+    loginForm.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      loginError.style.display = 'none';
+      const u = (document.getElementById('username').value || "").trim().toLowerCase();
+      const p = (document.getElementById('password').value || "");
+
+      if(USERS[u] && USERS[u] === p){
+        setSession(u);
+        showAppFor(u);
+      }else{
+        loginError.style.display = 'block';
+      }
+    });
+
+    btnClearLogin.addEventListener('click', ()=>{
+      document.getElementById('username').value = "";
+      document.getElementById('password').value = "";
+      loginError.style.display = 'none';
+      document.getElementById('username').focus();
+    });
+
+    // CapsLock indikator
+    document.getElementById('password').addEventListener('keyup', (e)=>{
+      const on = e.getModifierState && e.getModifierState('CapsLock');
+      capsWarn.style.display = on ? 'block' : 'none';
+    });
+
+    // Logout
+    btnLogout.addEventListener('click', ()=>{
+      clearSession();
+      // Reset flag supaya muat ulang data saat login lagi
+      window.__dataLoaded = false;
+      showLogin();
+    });
+
+    // ========= KONFIGURASI DATA =========
     const SHEET_ID = "1ESGkZf2P_0XMnyJgb7wN_L_Xo144nO6GPg30rrBZW58";
     const SHEET_NAME = "lookerin";
     const ROWS_PER_PAGE = 50;
@@ -506,12 +683,13 @@
       XLSX.writeFile(wb, 'pelamar_lookerin.xlsx');
     }
 
-    // Events
+    // Pagination events
     document.getElementById('pg-prev').addEventListener('click', ()=>{ currentPage--; renderTablePage(); });
     document.getElementById('pg-next').addEventListener('click', ()=>{ currentPage++; renderTablePage(); });
 
-    btnApply.addEventListener('click', applyFilters);
-    btnClear.addEventListener('click', ()=>{
+    // Filter events
+    document.getElementById('applyFilter').addEventListener('click', applyFilters);
+    document.getElementById('clearFilter').addEventListener('click', ()=>{
       fGender.value = "";
       fKerjaPertama.value = "";
       fPendidikan.value = "";
@@ -521,14 +699,14 @@
       applyFilters();
     });
 
+    // Search events
     searchInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') applyFilters(); });
     btnSearch2.addEventListener('click', applyFilters);
     btnClear2.addEventListener('click', ()=>{ searchInput2.value=""; applyFilters(); });
 
+    // Export events
     btnCsv.addEventListener('click', exportCSV);
     btnXlsx.addEventListener('click', exportXLSX);
-
-    loadData();
   </script>
 </body>
 </html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Database Pelamar Lookerin</title>
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- SheetJS untuk export Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --ink:#0e1726;
+      --muted:#6b7280;
+      --brand:#1e97b3;
+      --brand-2:#147d95;
+      --line:#e5e7eb;
+      --chip:#eef7fb;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--ink);
+      background:var(--bg);
+    }
+
+    /* Header */
+    .header{
+      position:sticky; top:0; z-index:10;
+      background:var(--card);
+      border-bottom:1px solid var(--line);
+    }
+    .header-inner{
+      max-width:1200px; margin:0 auto; padding:12px 20px; display:flex; gap:12px; align-items:center;
+    }
+    .logo{
+      width:32px; height:32px; border-radius:8px; object-fit:contain;
+      background:#fff; border:1px solid var(--line);
+    }
+    .title{
+      font-weight:700; font-size:18px; letter-spacing:.2px;
+    }
+
+    /* Layout */
+    .container{max-width:1200px; margin:18px auto; padding:0 20px;}
+    .grid{
+      display:grid; grid-template-columns:300px 1fr; gap:16px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr; }
+    }
+
+    /* Filter panel */
+    .panel{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:0 1px 2px rgba(0,0,0,.04);
+    }
+    .panel h3{
+      margin:0 0 12px 0; font-size:14px; font-weight:700;
+    }
+    .filters{display:flex; flex-direction:column; gap:10px;}
+    .field label{
+      display:block; font-size:12px; color:var(--muted); margin-bottom:6px; font-weight:600;
+    }
+    .field select{
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+      background:#fff; font-size:13px; outline:none;
+    }
+    .actions{display:flex; gap:8px; margin-top:8px;}
+    .btn{
+      border:1px solid transparent; background:var(--brand); color:#fff;
+      padding:9px 12px; border-radius:999px; font-weight:600; font-size:13px; cursor:pointer;
+    }
+    .btn.secondary{
+      background:#fff; color:var(--ink); border-color:var(--line);
+    }
+    .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+    .chip{
+      font-size:12px; padding:6px 10px; border-radius:999px; background:var(--chip); border:1px solid #d7ecf4;
+    }
+
+    /* Table card */
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:0;
+      overflow:hidden;
+      box-shadow:0 1px 2px rgba(0,0,0,.04);
+    }
+    .card-header{
+      padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); gap:10px; flex-wrap:wrap;
+    }
+    .result-count{font-size:13px; color:var(--muted)}
+    .toolbar{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    .search{
+      width:300px; max-width:45%;
+    }
+    .search input{
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-size:13px;
+    }
+    .export-btn{
+      border:1px solid var(--line); background:#fff; border-radius:10px; padding:8px 12px; font-size:13px; cursor:pointer;
+    }
+
+    /* Extra search bar above table */
+    .subsearch{
+      padding:10px 14px; border-bottom:1px solid var(--line); display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+    }
+    .subsearch .label{font-size:12px; color:var(--muted); font-weight:600;}
+    .subsearch .input-wrap{flex:1; min-width:260px;}
+    .subsearch input{
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-size:13px;
+    }
+
+    .table-wrap{
+      overflow:auto; max-height:calc(100vh - 300px);
+    }
+    table{border-collapse:separate; border-spacing:0; width:100%;}
+    thead th{
+      position:sticky; top:0; z-index:5;
+      background:#f9fafb; border-bottom:1px solid var(--line);
+      font-size:12px; text-align:left; padding:10px 12px; white-space:nowrap;
+    }
+    tbody td{
+      border-bottom:1px solid var(--line); font-size:12px; padding:9px 12px; vertical-align:top;
+    }
+    tbody tr:hover{background:#fafcff}
+    a.link{color:var(--brand); text-decoration:none}
+    a.link:hover{text-decoration:underline}
+
+    /* Badges */
+    .badge{
+      display:inline-block; padding:4px 8px; border-radius:999px; font-weight:600; font-size:11px; border:1px solid transparent;
+      white-space:nowrap;
+    }
+    /* Pendidikan */
+    .bd-sd{ background:#fff6e6; border-color:#ffe2ad; }         /* SD */
+    .bd-smp{ background:#fff0e6; border-color:#ffdab8; }        /* SMP */
+    .bd-sma,.bd-smk{ background:#eaf5ff; border-color:#cfe8ff; }/* SMA/SMK */
+    .bd-d1,.bd-d2,.bd-d3{ background:#eaf9f1; border-color:#c8efd9; } /* Diploma */
+    .bd-s1{ background:#eef7fb; border-color:#d7ecf4; }         /* S1 */
+    .bd-s2{ background:#efeaff; border-color:#d7ccff; }         /* S2 */
+    .bd-s3{ background:#ffeaf1; border-color:#ffcfe0; }         /* S3 */
+    .bd-lain{ background:#f3f4f6; border-color:#e5e7eb; }       /* lain-lain */
+
+    /* Provinsi */
+    .bd-prov{ background:#eef7fb; border:1px solid #d7ecf4; }
+
+    /* Pagination */
+    .pagination{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:10px 14px; border-top:1px solid var(--line); gap:10px; flex-wrap:wrap;
+    }
+    .pager{
+      display:flex; gap:8px; align-items:center;
+    }
+    .pg-btn{
+      background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px 12px; cursor:pointer; font-size:13px;
+    }
+    .pg-btn[disabled]{opacity:.5; cursor:not-allowed}
+    .page-info{font-size:13px; color:var(--muted)}
+    .page-size{font-size:12px; color:var(--muted)}
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <img class="logo" alt="Lookerin Icon" src="https://res.cloudinary.com/dkihurh8o/image/upload/v1759062197/Logo_-_Lookerin-_Icon_he3evd.png">
+      <div class="title">Database Pelamar Lookerin</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <!-- Filter Panel -->
+      <aside class="panel" aria-label="Filter">
+        <h3>Filter</h3>
+        <div class="filters">
+          <div class="field">
+            <label for="f-gender">JENIS KELAMIN</label>
+            <select id="f-gender">
+              <option value="">Semua</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-minatposisi">MINAT POSISI (semua kolom)</label>
+            <select id="f-minatposisi">
+              <option value="">Semua</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-kerjapertama">KERJA PERTAMA (kolom: MINAT POSISI KERJA PERTAMA)</label>
+            <select id="f-kerjapertama">
+              <option value="">Semua</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-pendidikan">PENDIDIKAN TERAKHIR</label>
+            <select id="f-pendidikan">
+              <option value="">Semua</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-provdom">PROVINSI DOMISILI</label>
+            <select id="f-provdom">
+              <option value="">Semua</option>
+            </select>
+          </div>
+          <div class="actions">
+            <button class="btn" id="applyFilter">Terapkan</button>
+            <button class="btn secondary" id="clearFilter">Clear</button>
+          </div>
+          <div class="chips" id="activeChips"></div>
+        </div>
+      </aside>
+
+      <!-- Table Card -->
+      <section class="card" aria-label="Tabel Pelamar">
+        <div class="card-header">
+          <div class="result-count" id="resultCount">Memuat data…</div>
+          <div class="toolbar">
+            <div class="search" title="Pencarian cepat">
+              <input id="q" type="search" placeholder="Cari nama/email/WA/kota… (enter)">
+            </div>
+            <button class="export-btn" id="btnCsv">Export CSV</button>
+            <button class="export-btn" id="btnXlsx">Export Excel</button>
+          </div>
+        </div>
+
+        <!-- Subsearch dengan suggestion dari MINAT POSISI KERJA PERTAMA -->
+        <div class="subsearch">
+          <div class="label">Search (dengan saran posisi):</div>
+          <div class="input-wrap">
+            <input id="q2" list="jobs-list" placeholder="Ketik bebas… contoh: Admin, Sales, Barista">
+            <datalist id="jobs-list"></datalist>
+          </div>
+          <button class="export-btn" id="btnSearch2">Cari</button>
+          <button class="export-btn" id="btnClear2">Clear</button>
+        </div>
+
+        <div class="table-wrap">
+          <table id="dataTable" aria-describedby="resultCount">
+            <thead id="thead"></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <div class="page-size">Menampilkan <strong>50</strong> data per halaman</div>
+          <div class="pager">
+            <button class="pg-btn" id="pg-prev">Prev</button>
+            <span class="page-info" id="pageInfo">Hal 1 / 1</span>
+            <button class="pg-btn" id="pg-next">Next</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // ========= KONFIGURASI =========
+    const SHEET_ID = "1ESGkZf2P_0XMnyJgb7wN_L_Xo144nO6GPg30rrBZW58";
+    const SHEET_NAME = "lookerin"; // sesuai permintaan
+    const ROWS_PER_PAGE = 50;
+
+    // Kolom yang ditampilkan dan urutannya sesuai permintaan
+    const COLUMNS_ORDER = [
+      "TIMESTAMP","EMAIL AKTIF","SUMBER INFORMASI LOWONGAN","NAMA LENGKAP","TANGGAL LAHIR",
+      "NOMOR WA AKTIF","NOMOR HP AKTIF","JENIS KELAMIN","PENGALAMAN KERJA TERAKHIR","DURASI PENGALAMAN KERJA",
+      "MINAT POSISI KERJA PERTAMA","MINAT POSISI KERJA KEDUA","MINAT POSISI KERJA KETIGA","PENDIDIKAN TERAKHIR",
+      "NAMA SEKOLAH / NAMA UNIVERITAS","JURUSAN","KEPEMILIKAN KENDARAAN","KEPEMILIKAN SIM AKTIF",
+      "ALAMAT DOMISILI","PROVINSI DOMISILI","KECAMATAN","KELURAHAN",
+      "PROVINSI MINAT PENEMPATAN","KOTA MINAT PENEMPATAN","UPLOAD CV","GAJI TERAKHIR (IDR)","HARAPAN GAJI (IDR)"
+    ];
+
+    // Elemen UI
+    const thead = document.getElementById('thead');
+    const tbody = document.getElementById('tbody');
+    const resultCount = document.getElementById('resultCount');
+    const pageInfo = document.getElementById('pageInfo');
+    const btnPrev = document.getElementById('pg-prev');
+    const btnNext = document.getElementById('pg-next');
+
+    // Filter elements
+    const fGender = document.getElementById('f-gender');
+    const fMinatPosisi = document.getElementById('f-minatposisi');
+    const fKerjaPertama = document.getElementById('f-kerjapertama');
+    const fPendidikan = document.getElementById('f-pendidikan');
+    const fProvDom = document.getElementById('f-provdom');
+    const btnApply = document.getElementById('applyFilter');
+    const btnClear = document.getElementById('clearFilter');
+    const chips = document.getElementById('activeChips');
+
+    // Search
+    const searchInput = document.getElementById('q');     // quick search
+    const searchInput2 = document.getElementById('q2');   // subsearch with suggestions
+    const jobsList = document.getElementById('jobs-list');
+    const btnSearch2 = document.getElementById('btnSearch2');
+    const btnClear2 = document.getElementById('btnClear2');
+
+    // Export
+    const btnCsv = document.getElementById('btnCsv');
+    const btnXlsx = document.getElementById('btnXlsx');
+
+    // Data state
+    let rowsRaw = [];           // semua baris mentah (array of objects)
+    let rowsFiltered = [];      // setelah filter + pencarian
+    let currentPage = 1;        // halaman aktif
+
+    const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+
+    async function loadData(){
+      try{
+        const res = await fetch(GVIZ_URL, {cache:"no-store"});
+        const txt = await res.text();
+        const jsonStr = txt.substring(txt.indexOf('{'), txt.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonStr);
+
+        const cols = data.table.cols.map(c => c.label?.trim() || c.id || "");
+        const rows = data.table.rows;
+
+        rowsRaw = rows.map(r => {
+          const obj = {};
+          cols.forEach((label, i) => {
+            const cell = r.c[i];
+            let v = (cell && (cell.f ?? cell.v)) ?? "";
+            if (typeof v === 'string') v = v.trim();
+            obj[label] = v;
+          });
+          return obj;
+        });
+
+        renderHeader();
+        populateFilters();
+
+        // Isi datalist suggestion dari MINAT POSISI KERJA PERTAMA
+        populateJobSuggestions();
+
+        applyFilters();
+      }catch(err){
+        console.error(err);
+        resultCount.textContent = "Gagal memuat data. Pastikan sheet 'lookerin' bisa diakses publik.";
+      }
+    }
+
+    function renderHeader(){
+      thead.innerHTML = "";
+      const tr = document.createElement('tr');
+      COLUMNS_ORDER.forEach(h => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        tr.appendChild(th);
+      });
+      thead.appendChild(tr);
+    }
+
+    function uniqueSorted(values){
+      return [...new Set(values.filter(v => v !== "" && v != null))].sort((a,b)=>{
+        const A = (""+a).toLowerCase(), B = (""+b).toLowerCase();
+        if (A < B) return -1; if (A > B) return 1; return 0;
+      });
+    }
+
+    function populateSelect(selectEl, items){
+      const current = selectEl.value || "";
+      selectEl.innerHTML = '<option value="">Semua</option>' + items.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+      if (items.includes(current)) selectEl.value = current;
+    }
+
+    function getCol(name){ return rowsRaw.map(r => r[name] ?? ""); }
+
+    function populateFilters(){
+      populateSelect(fGender, uniqueSorted(getCol("JENIS KELAMIN")));
+
+      const minatAny = [
+        ...getCol("MINAT POSISI KERJA PERTAMA"),
+        ...getCol("MINAT POSISI KERJA KEDUA"),
+        ...getCol("MINAT POSISI KERJA KETIGA")
+      ];
+      populateSelect(fMinatPosisi, uniqueSorted(minatAny));
+
+      populateSelect(fKerjaPertama, uniqueSorted(getCol("MINAT POSISI KERJA PERTAMA")));
+      populateSelect(fPendidikan, uniqueSorted(getCol("PENDIDIKAN TERAKHIR")));
+      populateSelect(fProvDom, uniqueSorted(getCol("PROVINSI DOMISILI")));
+    }
+
+    function populateJobSuggestions(){
+      const jobs = uniqueSorted(getCol("MINAT POSISI KERJA PERTAMA").map(v => (v||"").toString()));
+      jobsList.innerHTML = jobs.map(j => `<option value="${escapeHtml(j)}"></option>`).join("");
+    }
+
+    function escapeHtml(str){
+      return (str==null? "": String(str))
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function linkifyIfUrl(value){
+      const v = String(value || "").trim();
+      if (!v) return "";
+      if (/^https?:\/\//i.test(v)){
+        return `<a class="link" href="${escapeHtml(v)}" target="_blank" rel="noopener">Buka</a>`;
+      }
+      return escapeHtml(v);
+    }
+
+    // Map jenjang pendidikan ke class badge
+    function pendidikanClass(valRaw){
+      const v = (valRaw || "").toString().toLowerCase();
+      if (/\bsd\b/.test(v)) return "bd-sd";
+      if (/\bsmp\b/.test(v)) return "bd-smp";
+      if (/\b(sm[ak])\b/.test(v) || /sma|smk/.test(v)) return "bd-sma";
+      if (/\bd[123]\b/.test(v) || /d1|d2|d3/.test(v)) return "bd-d3";
+      if (/\bs1\b/.test(v) || /sarjana\b/.test(v)) return "bd-s1";
+      if (/\bs2\b/.test(v) || /magister\b/.test(v)) return "bd-s2";
+      if (/\bs3\b/.test(v) || /doktor\b/.test(v)) return "bd-s3";
+      return "bd-lain";
+    }
+
+    function applyFilters(){
+      const sGender = fGender.value.trim().toLowerCase();
+      const sMinat = fMinatPosisi.value.trim().toLowerCase();
+      const sKerja1 = fKerjaPertama.value.trim().toLowerCase();
+      const sPend = fPendidikan.value.trim().toLowerCase();
+      const sProv = fProvDom.value.trim().toLowerCase();
+      const q = searchInput.value.trim().toLowerCase();
+      const q2 = searchInput2.value.trim().toLowerCase();
+
+      renderChips([
+        ["JENIS KELAMIN", sGender],
+        ["MINAT POSISI", sMinat],
+        ["KERJA PERTAMA", sKerja1],
+        ["PENDIDIKAN TERAKHIR", sPend],
+        ["PROVINSI DOMISILI", sProv],
+        ["Cari (atas)", q],
+        ["Cari (suggest)", q2]
+      ]);
+
+      rowsFiltered = rowsRaw.filter(r => {
+        const gender = (r["JENIS KELAMIN"] ?? "").toString().toLowerCase();
+        const minat1 = (r["MINAT POSISI KERJA PERTAMA"] ?? "").toString().toLowerCase();
+        const minat2 = (r["MINAT POSISI KERJA KEDUA"] ?? "").toString().toLowerCase();
+        const minat3 = (r["MINAT POSISI KERJA KETIGA"] ?? "").toString().toLowerCase();
+        const pendidikan = (r["PENDIDIKAN TERAKHIR"] ?? "").toString().toLowerCase();
+        const provdom = (r["PROVINSI DOMISILI"] ?? "").toString().toLowerCase();
+
+        if (sGender && gender !== sGender) return false;
+        if (sMinat && !(minat1 === sMinat || minat2 === sMinat || minat3 === sMinat)) return false;
+        if (sKerja1 && minat1 !== sKerja1) return false;
+        if (sPend && pendidikan !== sPend) return false;
+        if (sProv && provdom !== sProv) return false;
+
+        // quick search (nama/email/wa/lokasi umum)
+        if (q){
+          const hay = [
+            r["NAMA LENGKAP"], r["EMAIL AKTIF"], r["NOMOR WA AKTIF"], r["ALAMAT DOMISILI"],
+            r["KOTA MINAT PENEMPATAN"], r["PROVINSI MINAT PENEMPATAN"], r["PROVINSI DOMISILI"]
+          ].map(x => (x??"").toString().toLowerCase()).join(" ");
+          if (!hay.includes(q)) return false;
+        }
+        // subsearch dengan suggest (cari bebas seluruh baris, prioritas minat1)
+        if (q2){
+          const hay2 = (Object.values(r).map(x => (x??"").toString().toLowerCase()).join(" "));
+          if (!hay2.includes(q2)) return false;
+        }
+
+        return true;
+      });
+
+      currentPage = 1;
+      renderTablePage();
+    }
+
+    function renderChips(pairs){
+      chips.innerHTML = "";
+      pairs.forEach(([label, val])=>{
+        if (!val) return;
+        const span = document.createElement('span');
+        span.className = "chip";
+        span.textContent = `${label}: ${val}`;
+        chips.appendChild(span);
+      });
+    }
+
+    function renderTablePage(){
+      const total = rowsFiltered.length;
+      const totalPages = Math.max(1, Math.ceil(total / ROWS_PER_PAGE));
+      currentPage = Math.min(currentPage, totalPages);
+
+      const start = (currentPage - 1) * ROWS_PER_PAGE;
+      const end = Math.min(start + ROWS_PER_PAGE, total);
+
+      const slice = rowsFiltered.slice(start, end);
+
+      const rowsHtml = slice.map(r => {
+        return `<tr>
+          ${COLUMNS_ORDER.map(col => {
+            const raw = r[col] ?? "";
+            if (col === "UPLOAD CV") return `<td>${linkifyIfUrl(raw)}</td>`;
+
+            // Badge Pendidikan
+            if (col === "PENDIDIKAN TERAKHIR"){
+              const cls = pendidikanClass(raw);
+              return `<td><span class="badge ${cls}">${escapeHtml(raw)}</span></td>`;
+            }
+            // Badge Provinsi
+            if (col === "PROVINSI DOMISILI"){
+              return `<td><span class="badge bd-prov">${escapeHtml(raw)}</span></td>`;
+            }
+
+            return `<td>${escapeHtml(raw)}</td>`;
+          }).join("")}
+        </tr>`;
+      }).join("");
+
+      tbody.innerHTML = rowsHtml || `<tr><td colspan="${COLUMNS_ORDER.length}" style="padding:16px;color:var(--muted);">Tidak ada data.</td></tr>`;
+
+      resultCount.textContent = `Total ${total.toLocaleString('id-ID')} data • Menampilkan ${total? (start+1):0}-${end} `;
+      pageInfo.textContent = `Hal ${currentPage} / ${totalPages}`;
+
+      btnPrev.disabled = currentPage <= 1;
+      btnNext.disabled = currentPage >= totalPages;
+    }
+
+    // ===== Export Helpers =====
+    function filteredDataAsArray(){
+      // Data yang diekspor = rowsFiltered (bukan hanya halaman aktif)
+      const data = rowsFiltered.length ? rowsFiltered : rowsRaw;
+      // urutkan kolom sesuai COLUMNS_ORDER
+      const arr = data.map(r => COLUMNS_ORDER.map(k => r[k] ?? ""));
+      return { header: COLUMNS_ORDER.slice(), rows: arr };
+    }
+
+    function downloadBlob(content, filename, type){
+      const blob = new Blob([content], {type});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      URL.revokeObjectURL(url); a.remove();
+    }
+
+    function exportCSV(){
+      const { header, rows } = filteredDataAsArray();
+      const escapeCsv = v => {
+        v = (v ?? "").toString().replaceAll('"','""');
+        if (/[",\n]/.test(v)) return `"${v}"`;
+        return v;
+      };
+      const lines = [
+        header.map(escapeCsv).join(','),
+        ...rows.map(row => row.map(escapeCsv).join(','))
+      ];
+      downloadBlob(lines.join('\n'), 'pelamar_lookerin.csv', 'text/csv;charset=utf-8;');
+    }
+
+    function exportXLSX(){
+      const { header, rows } = filteredDataAsArray();
+      const aoa = [header, ...rows];
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      // autofit sederhana: set width berdasarkan panjang header
+      ws['!cols'] = header.map(h => ({ wch: Math.max(12, String(h).length + 2) }));
+      XLSX.utils.book_append_sheet(wb, ws, 'Pelamar');
+      XLSX.writeFile(wb, 'pelamar_lookerin.xlsx');
+    }
+
+    // Events
+    document.getElementById('pg-prev').addEventListener('click', ()=>{ currentPage--; renderTablePage(); });
+    document.getElementById('pg-next').addEventListener('click', ()=>{ currentPage++; renderTablePage(); });
+
+    document.getElementById('applyFilter').addEventListener('click', applyFilters);
+    document.getElementById('clearFilter').addEventListener('click', ()=>{
+      fGender.value = "";
+      fMinatPosisi.value = "";
+      fKerjaPertama.value = "";
+      fPendidikan.value = "";
+      fProvDom.value = "";
+      searchInput.value = "";
+      searchInput2.value = "";
+      applyFilters();
+    });
+
+    searchInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') applyFilters(); });
+    btnSearch2.addEventListener('click', applyFilters);
+    btnClear2.addEventListener('click', ()=>{ searchInput2.value=""; applyFilters(); });
+
+    // Export buttons
+    btnCsv.addEventListener('click', exportCSV);
+    btnXlsx.addEventListener('click', exportXLSX);
+
+    // Start
+    loadData();
+  </script>
+</body>
+</html>

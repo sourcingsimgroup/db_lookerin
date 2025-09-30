@@ -118,8 +118,7 @@
     .login-actions{ display:flex; gap:8px; align-items:center; margin-top:8px;}
     .login-error{ color:var(--danger); font-size:12px; margin-top:8px; display:none;}
     .caps{ font-size:11px; color:var(--muted); margin-top:6px; }
-    .demo-users{ margin-top:12px; font-size:12px; background: #f8fafc; border:1px dashed var(--line); border-radius:12px; padding:10px;}
-    .demo-users code{ background:#eef2f7; border:1px solid var(--line); padding:2px 6px; border-radius:6px; }
+    .login-footnote{ margin-top:14px; font-size:12px; color:var(--muted); }
   </style>
 </head>
 <body>
@@ -182,7 +181,7 @@
           </div>
         </div>
 
-        <!-- Subsearch dengan suggestion dari MINAT POSISI KERJA PERTAMA -->
+        <!-- Subsearch dengan suggestion -->
         <div class="subsearch">
           <div class="label">Search (dengan saran posisi):</div>
           <div class="input-wrap">
@@ -232,17 +231,8 @@
         </div>
         <div class="login-error" id="loginError">Username / password salah.</div>
         <div class="caps" id="capsWarn" style="display:none;">Caps Lock aktif.</div>
+        <div class="login-footnote">Hubungi Sourcing HO untuk login dan password.</div>
       </form>
-
-      <div class="demo-users">
-        <div><strong>Daftar akun</strong> (case-insensitive):</div>
-        <ul style="margin:6px 0 0 16px; padding:0;">
-          <li>u: <code>sourcingho</code> • p: <code>sourcingho</code></li>
-          <li>u: <code>anya</code> • p: <code>regional1</code></li>
-          <li>u: <code>rizkia</code> • p: <code>regional2</code></li>
-          <li>u: <code>yoghi</code> • p: <code>regional3</code></li>
-        </ul>
-      </div>
     </div>
   </div>
 
@@ -284,21 +274,15 @@
     }
 
     function showAppFor(user){
-      // Header session
       sessionUser.textContent = '@' + user;
       sessionBox.classList.remove('hidden');
-
-      // Tampilkan app, sembunyikan login
       loginWrap.classList.add('hidden');
       appRoot.classList.remove('hidden');
-
-      // Muat data hanya sekali saat tampil
       if (!window.__dataLoaded){
         window.__dataLoaded = true;
         loadData();
       }
     }
-
     function showLogin(){
       appRoot.classList.add('hidden');
       sessionBox.classList.add('hidden');
@@ -323,7 +307,6 @@
       loginError.style.display = 'none';
       const u = (document.getElementById('username').value || "").trim().toLowerCase();
       const p = (document.getElementById('password').value || "");
-
       if(USERS[u] && USERS[u] === p){
         setSession(u);
         showAppFor(u);
@@ -331,24 +314,18 @@
         loginError.style.display = 'block';
       }
     });
-
     btnClearLogin.addEventListener('click', ()=>{
       document.getElementById('username').value = "";
       document.getElementById('password').value = "";
       loginError.style.display = 'none';
       document.getElementById('username').focus();
     });
-
-    // CapsLock indikator
     document.getElementById('password').addEventListener('keyup', (e)=>{
       const on = e.getModifierState && e.getModifierState('CapsLock');
       capsWarn.style.display = on ? 'block' : 'none';
     });
-
-    // Logout
     btnLogout.addEventListener('click', ()=>{
       clearSession();
-      // Reset flag supaya muat ulang data saat login lagi
       window.__dataLoaded = false;
       showLogin();
     });
@@ -358,7 +335,6 @@
     const SHEET_NAME = "lookerin";
     const ROWS_PER_PAGE = 50;
 
-    // Kolom MINAT POSISI KEDUA & KETIGA disembunyikan (tidak ditampilkan)
     const COLUMNS_ORDER = [
       "TIMESTAMP","EMAIL AKTIF","SUMBER INFORMASI LOWONGAN","NAMA LENGKAP","TANGGAL LAHIR",
       "NOMOR WA AKTIF","NOMOR HP AKTIF","JENIS KELAMIN","PENGALAMAN KERJA TERAKHIR","DURASI PENGALAMAN KERJA",
@@ -386,8 +362,8 @@
     const chips = document.getElementById('activeChips');
 
     // Search
-    const searchInput = document.getElementById('q');     // quick search
-    const searchInput2 = document.getElementById('q2');   // subsearch with suggestions
+    const searchInput = document.getElementById('q');
+    const searchInput2 = document.getElementById('q2');
     const jobsList = document.getElementById('jobs-list');
     const btnSearch2 = document.getElementById('btnSearch2');
     const btnClear2 = document.getElementById('btnClear2');
@@ -500,7 +476,6 @@
       return "bd-lain";
     }
 
-    // ==== Tanggal: tampil "01 Sept 2025" ====
     function parseGvizDate(v){
       if (v == null) return null;
       if (typeof v === "string"){
@@ -683,11 +658,10 @@
       XLSX.writeFile(wb, 'pelamar_lookerin.xlsx');
     }
 
-    // Pagination events
+    // Events
     document.getElementById('pg-prev').addEventListener('click', ()=>{ currentPage--; renderTablePage(); });
     document.getElementById('pg-next').addEventListener('click', ()=>{ currentPage++; renderTablePage(); });
 
-    // Filter events
     document.getElementById('applyFilter').addEventListener('click', applyFilters);
     document.getElementById('clearFilter').addEventListener('click', ()=>{
       fGender.value = "";
@@ -699,14 +673,12 @@
       applyFilters();
     });
 
-    // Search events
     searchInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') applyFilters(); });
-    btnSearch2.addEventListener('click', applyFilters);
-    btnClear2.addEventListener('click', ()=>{ searchInput2.value=""; applyFilters(); });
+    document.getElementById('btnSearch2').addEventListener('click', applyFilters);
+    document.getElementById('btnClear2').addEventListener('click', ()=>{ searchInput2.value=""; applyFilters(); });
 
-    // Export events
-    btnCsv.addEventListener('click', exportCSV);
-    btnXlsx.addEventListener('click', exportXLSX);
+    document.getElementById('btnCsv').addEventListener('click', exportCSV);
+    document.getElementById('btnXlsx').addEventListener('click', exportXLSX);
   </script>
 </body>
 </html>

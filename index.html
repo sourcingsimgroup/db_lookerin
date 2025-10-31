@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Database Pelamar Lookerin</title>
+  <title>Pelamar CAREER SIMGROUP</title>
 
   <!-- Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -214,12 +214,12 @@
   <!-- Login Modal -->
   <div class="login-wrap" id="loginWrap" aria-modal="true" role="dialog" aria-labelledby="loginTitle">
     <div class="login-card">
-      <h1 class="login-title" id="loginTitle">Masuk ke Lookerin</h1>
+      <h1 class="login-title" id="loginTitle">Masuk ke CAREER SIMGROUP</h1>
       <p class="login-sub">Gunakan akun yang telah diberikan.</p>
       <form id="loginForm" autocomplete="on">
         <div class="login-field">
           <label for="username">Username</label>
-          <input id="username" name="username" required placeholder="contoh: anya">
+          <input id="username" name="username" required placeholder="contoh: sourcingho">
         </div>
         <div class="login-field">
           <label for="password">Password</label>
@@ -379,48 +379,41 @@
 
     const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
-    async function loadData(){
-      try{
-        const res = await fetch(GVIZ_URL, {cache:"no-store"});
-        const txt = await res.text();
-        const jsonStr = txt.substring(txt.indexOf('{'), txt.lastIndexOf('}') + 1);
-        const data = JSON.parse(jsonStr);
-
-        const cols = data.table.cols.map(c => c.label?.trim() || c.id || "");
-        const rows = data.table.rows;
-
-        rowsRaw = rows.map(r => {
-          const obj = {};
-          cols.forEach((label, i) => {
-            const cell = r.c[i];
-            let v = (cell && (cell.f ?? cell.v)) ?? "";
-            obj[label] = v;
-          });
-          return obj;
-        });
-
-        renderHeader();
-        populateFilters();
-        populateJobSuggestions();
-        applyFilters();
-      }catch(err){
-        console.error(err);
-        resultCount.textContent = "Gagal memuat data. Pastikan sheet 'lookerin' bisa diakses publik.";
-      }
-    }
-
-    function renderHeader(){
-      thead.innerHTML = "";
-      const tr = document.createElement('tr');
-      COLUMNS_ORDER.forEach(h => {
-        const th = document.createElement('th');
-        th.textContent = h;
-        tr.appendChild(th);
-      });
-      thead.appendChild(tr);
-    }
-
+    // ======== HELPERS & SEARCH INDEX ========
     function vToStr(v){ return (v==null? "": String(v)).trim(); }
+    function norm(s){
+      return vToStr(s)
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+        .replace(/\s+/g,' ')
+        .trim();
+    }
+    function includesToken(hay, needle){
+      if(!needle) return true;
+      return hay.includes(needle);
+    }
+
+    let rowsIndex = []; // sejajar dengan rowsRaw
+    const hayQuickKeys = [
+      "NAMA LENGKAP","EMAIL AKTIF","NOMOR WA AKTIF","ALAMAT DOMISILI",
+      "KOTA MINAT PENEMPATAN","PROVINSI MINAT PENEMPATAN","PROVINSI DOMISILI"
+    ];
+
+    function buildIndex(){
+      rowsIndex = rowsRaw.map(r=>{
+        const genderN     = norm(r["JENIS KELAMIN"]);
+        const minat1N     = norm(r["MINAT POSISI KERJA PERTAMA"]);
+        const pendidikanN = norm(r["PENDIDIKAN TERAKHIR"]);
+        const provdomN    = norm(r["PROVINSI DOMISILI"]);
+
+        const hayQuick = norm(hayQuickKeys.map(k=>r[k]).join(' '));
+        const hayAll   = norm(Object.values(r).join(' '));
+
+        return { genderN, minat1N, pendidikanN, provdomN, hayQuick, hayAll };
+      });
+    }
+
     function uniqueSorted(values){
       return [...new Set(values.filter(v => v !== "" && v != null))].sort((a,b)=>{
         const A = (""+vToStr(a)).toLowerCase(), B = (""+vToStr(b)).toLowerCase();
@@ -459,7 +452,7 @@
       const v = String(value || "").trim();
       if (!v) return "";
       if (/^https?:\/\//i.test(v)){
-        return `<a class="link" href="${escapeHtml(v)}" target="_blank" rel="noopener">Buka</a>`;
+        return `<a class="link" href="${escapeHtml(v)}" target="_blank" rel="noopener noreferrer">Buka</a>`;
       }
       return escapeHtml(v);
     }
@@ -519,13 +512,55 @@
       return num.toLocaleString('id-ID');
     }
 
+    async function loadData(){
+      try{
+        const res = await fetch(GVIZ_URL + '&_ts=' + Date.now(), {cache:"no-store"});
+        const txt = await res.text();
+        const jsonStr = txt.substring(txt.indexOf('{'), txt.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonStr);
+
+        const cols = data.table.cols.map(c => c.label?.trim() || c.id || "");
+        const rows = data.table.rows;
+
+        rowsRaw = rows.map(r => {
+          const obj = {};
+          cols.forEach((label, i) => {
+            const cell = r.c[i];
+            let v = (cell && (cell.f ?? cell.v)) ?? "";
+            obj[label] = v;
+          });
+          return obj;
+        });
+
+        renderHeader();
+        populateFilters();
+        populateJobSuggestions();
+        buildIndex();              // indeks sekali
+        applyFilters();            // render awal
+      }catch(err){
+        console.error(err);
+        resultCount.textContent = "Gagal memuat data. Pastikan sheet 'lookerin' bisa diakses publik.";
+      }
+    }
+
+    function renderHeader(){
+      thead.innerHTML = "";
+      const tr = document.createElement('tr');
+      COLUMNS_ORDER.forEach(h => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        tr.appendChild(th);
+      });
+      thead.appendChild(tr);
+    }
+
     function applyFilters(){
-      const sGender = vToStr(fGender.value).toLowerCase();
-      const sKerja1 = vToStr(fKerjaPertama.value).toLowerCase();
-      const sPend = vToStr(fPendidikan.value).toLowerCase();
-      const sProv = vToStr(fProvDom.value).toLowerCase();
-      const q  = vToStr(searchInput.value).toLowerCase();
-      const q2 = vToStr(searchInput2.value).toLowerCase();
+      const sGender = norm(fGender.value);
+      const sKerja1 = norm(fKerjaPertama.value);
+      const sPend   = norm(fPendidikan.value);
+      const sProv   = norm(fProvDom.value);
+      const q       = norm(searchInput.value);
+      const q2      = norm(searchInput2.value);
 
       chips.innerHTML = "";
       [["JENIS KELAMIN",sGender],["POSISI DILAMAR",sKerja1],["PENDIDIKAN TERAKHIR",sPend],["PROVINSI DOMISILI",sProv],["Cari (atas)",q],["Cari (suggest)",q2]]
@@ -534,30 +569,21 @@
         const span=document.createElement('span'); span.className="chip"; span.textContent=`${label}: ${val}`; chips.appendChild(span);
       });
 
-      rowsFiltered = rowsRaw.filter(r => {
-        const gender = vToStr(r["JENIS KELAMIN"]).toLowerCase();
-        const minat1 = vToStr(r["MINAT POSISI KERJA PERTAMA"]).toLowerCase();
-        const pendidikan = vToStr(r["PENDIDIKAN TERAKHIR"]).toLowerCase();
-        const provdom = vToStr(r["PROVINSI DOMISILI"]).toLowerCase();
+      rowsFiltered = [];
+      for (let i=0;i<rowsRaw.length;i++){
+        const r  = rowsRaw[i];
+        const ix = rowsIndex[i];
 
-        if (sGender && gender !== sGender) return false;
-        if (sKerja1 && minat1 !== sKerja1) return false;
-        if (sPend && pendidikan !== sPend) return false;
-        if (sProv && provdom !== sProv) return false;
+        if (sGender && ix.genderN !== sGender) continue;
+        if (sKerja1 && !includesToken(ix.minat1N, sKerja1)) continue; // contains agar robust
+        if (sPend && ix.pendidikanN !== sPend) continue;
+        if (sProv && ix.provdomN !== sProv) continue;
 
-        if (q){
-          const hay = [
-            r["NAMA LENGKAP"], r["EMAIL AKTIF"], r["NOMOR WA AKTIF"], r["ALAMAT DOMISILI"],
-            r["KOTA MINAT PENEMPATAN"], r["PROVINSI MINAT PENEMPATAN"], r["PROVINSI DOMISILI"]
-          ].map(x => vToStr(x).toLowerCase()).join(" ");
-          if (!hay.includes(q)) return false;
-        }
-        if (q2){
-          const hay2 = Object.values(r).map(x => vToStr(x).toLowerCase()).join(" ");
-          if (!hay2.includes(q2)) return false;
-        }
-        return true;
-      });
+        if (q && !includesToken(ix.hayQuick, q)) continue;
+        if (q2 && !includesToken(ix.hayAll, q2)) continue;
+
+        rowsFiltered.push(r);
+      }
 
       currentPage = 1;
       renderTablePage();
@@ -566,7 +592,7 @@
     function renderTablePage(){
       const total = rowsFiltered.length;
       const totalPages = Math.max(1, Math.ceil(total / ROWS_PER_PAGE));
-      currentPage = Math.min(currentPage, totalPages);
+      currentPage = Math.min(Math.max(1, currentPage), totalPages);
 
       const start = (currentPage - 1) * ROWS_PER_PAGE;
       const end = Math.min(start + ROWS_PER_PAGE, total);
@@ -601,8 +627,8 @@
       resultCount.textContent = `Total ${total.toLocaleString('id-ID')} data • Menampilkan ${total? (start+1):0}-${end} `;
       pageInfo.textContent = `Hal ${currentPage} / ${totalPages}`;
 
-      btnPrev.disabled = currentPage <= 1;
-      btnNext.disabled = currentPage >= totalPages;
+      btnPrev.disabled = currentPage <= 1 || total === 0;
+      btnNext.disabled = currentPage >= totalPages || total === 0;
     }
 
     function filteredDataAsArray(){
@@ -658,7 +684,7 @@
       XLSX.writeFile(wb, 'pelamar_lookerin.xlsx');
     }
 
-    // Events
+    // ===== Events =====
     document.getElementById('pg-prev').addEventListener('click', ()=>{ currentPage--; renderTablePage(); });
     document.getElementById('pg-next').addEventListener('click', ()=>{ currentPage++; renderTablePage(); });
 
@@ -673,9 +699,26 @@
       applyFilters();
     });
 
+    // Trigger otomatis saat pilih filter
+    [fGender, fKerjaPertama, fPendidikan, fProvDom].forEach(el=>{
+      el.addEventListener('change', applyFilters);
+    });
+
+    // Debounce pencarian agar tidak berat saat ketik
+    let __qDeb;
+    function debounce(fn, wait=300){
+      return function(...args){
+        clearTimeout(__qDeb);
+        __qDeb = setTimeout(()=>fn.apply(this,args), wait);
+      };
+    }
+    searchInput.addEventListener('input', debounce(applyFilters, 300));
     searchInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') applyFilters(); });
+
+    // Subsearch tetap manual via tombol, tapi dukung Enter
     document.getElementById('btnSearch2').addEventListener('click', applyFilters);
     document.getElementById('btnClear2').addEventListener('click', ()=>{ searchInput2.value=""; applyFilters(); });
+    searchInput2.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') applyFilters(); });
 
     document.getElementById('btnCsv').addEventListener('click', exportCSV);
     document.getElementById('btnXlsx').addEventListener('click', exportXLSX);
